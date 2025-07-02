@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Card, FlashCardComponent } from '@/components';
+import { Button, Card, FlashCardComponent, DocumentUpload } from '@/components';
 import { createFlashCard } from '@/types';
 
 export default function Home() {
@@ -13,6 +13,16 @@ export default function Home() {
       'A method for calculating optimal review intervals based on recall difficulty, using ease factors and quality ratings to maximize long-term retention.',
     tags: ['spaced-repetition', 'learning', 'memory'],
   });
+
+  const handleFileSelect = (files: File[]) => {
+    console.log('Selected files:', files);
+    // TODO: Process uploaded files
+  };
+
+  const handleUploadError = (error: string) => {
+    console.error('Upload error:', error);
+    // TODO: Show error message to user
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -104,35 +114,15 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* Technical Features */}
+        {/* Document Upload Section */}
         <Card>
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-            Built with Modern Technologies
+            Upload Documents
           </h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                Frontend Excellence
-              </h3>
-              <ul className="space-y-2 text-gray-600">
-                <li>✅ Next.js 15 with TypeScript</li>
-                <li>✅ Tailwind CSS for styling</li>
-                <li>✅ Comprehensive test coverage</li>
-                <li>✅ Atomic design components</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                Development Standards
-              </h3>
-              <ul className="space-y-2 text-gray-600">
-                <li>✅ Test-Driven Development</li>
-                <li>✅ Code quality with ESLint</li>
-                <li>✅ Automated formatting</li>
-                <li>✅ Pre-commit quality gates</li>
-              </ul>
-            </div>
-          </div>
+          <DocumentUpload
+            onFileSelect={handleFileSelect}
+            onError={handleUploadError}
+          />
         </Card>
 
         {/* Footer */}

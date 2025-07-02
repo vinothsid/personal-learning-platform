@@ -16,12 +16,15 @@ export interface ReviewResult {
  * @returns Updated review parameters
  * @throws {Error} When quality is out of range
  */
-export function calculateNextReview(card: FlashCard, quality: number): ReviewResult {
+export function calculateNextReview(
+  card: FlashCard,
+  quality: number
+): ReviewResult {
   if (quality < 0 || quality > 5) {
     throw new Error('Quality must be between 0 and 5');
   }
 
-  let { repetitions, easeFactor, interval } = card;
+  const { repetitions, easeFactor, interval } = card;
 
   // Calculate new ease factor using SM-2 formula
   // EF' = EF + (0.1 - (5-q)*(0.08+(5-q)*0.02))
