@@ -1,10 +1,10 @@
-import { 
-  calculateNextReview, 
-  updateCardAfterReview, 
-  getDueCards, 
-  SM2_MIN_EASE_FACTOR 
+import {
+  calculateNextReview,
+  updateCardAfterReview,
+  getDueCards,
+  SM2_MIN_EASE_FACTOR,
 } from '../spaced-repetition';
-import { FlashCard, createFlashCard } from '@/types';
+import { createFlashCard } from '@/types';
 
 describe('SpacedRepetition', () => {
   describe('calculateNextReview', () => {
@@ -21,7 +21,7 @@ describe('SpacedRepetition', () => {
       expect(result.repetitions).toBe(1);
       // EF = 2.5 + (0.1 - (5-4)*(0.08+(5-4)*0.02)) = 2.5 + (0.1 - 1*0.1) = 2.5
       expect(result.easeFactor).toBe(2.5);
-      
+
       // Next review should be tomorrow
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -37,7 +37,7 @@ describe('SpacedRepetition', () => {
       card.repetitions = 1;
       card.interval = 1;
       card.lastReviewed = new Date();
-      
+
       const quality = 4;
 
       const result = calculateNextReview(card, quality);
@@ -57,7 +57,7 @@ describe('SpacedRepetition', () => {
       card.interval = 6;
       card.easeFactor = 2.6;
       card.lastReviewed = new Date();
-      
+
       const quality = 4;
 
       const result = calculateNextReview(card, quality);
@@ -78,7 +78,7 @@ describe('SpacedRepetition', () => {
       card.repetitions = 1;
       card.interval = 1;
       card.easeFactor = 2.5;
-      
+
       const quality = 5;
 
       const result = calculateNextReview(card, quality);
@@ -95,12 +95,12 @@ describe('SpacedRepetition', () => {
       card.repetitions = 1;
       card.interval = 1;
       card.easeFactor = 2.5;
-      
+
       const quality = 3;
 
       const result = calculateNextReview(card, quality);
 
-      // Ease factor should decrease: 2.5 + (0.1 - (5-3)*(0.08+(5-3)*0.02)) 
+      // Ease factor should decrease: 2.5 + (0.1 - (5-3)*(0.08+(5-3)*0.02))
       // = 2.5 + (0.1 - 2*(0.08+2*0.02)) = 2.5 + (0.1 - 2*0.12) = 2.5 - 0.14 = 2.36
       expect(result.easeFactor).toBe(2.36);
     });
@@ -113,7 +113,7 @@ describe('SpacedRepetition', () => {
       card.repetitions = 5;
       card.interval = 30;
       card.easeFactor = 2.8;
-      
+
       const quality = 2;
 
       const result = calculateNextReview(card, quality);
@@ -130,7 +130,7 @@ describe('SpacedRepetition', () => {
         answer: 'Test answer',
       });
       card.easeFactor = 1.35; // Close to minimum
-      
+
       const quality = 0; // Worst possible response
 
       const result = calculateNextReview(card, quality);
@@ -144,8 +144,12 @@ describe('SpacedRepetition', () => {
         answer: 'Test answer',
       });
 
-      expect(() => calculateNextReview(card, -1)).toThrow('Quality must be between 0 and 5');
-      expect(() => calculateNextReview(card, 6)).toThrow('Quality must be between 0 and 5');
+      expect(() => calculateNextReview(card, -1)).toThrow(
+        'Quality must be between 0 and 5'
+      );
+      expect(() => calculateNextReview(card, 6)).toThrow(
+        'Quality must be between 0 and 5'
+      );
     });
   });
 
