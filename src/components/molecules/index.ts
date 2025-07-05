@@ -5,3 +5,5 @@ export { DocumentUpload } from './DocumentUpload';
 export type { DocumentUploadProps, UploadStatus } from './DocumentUpload';
 export { UploadedItemsList } from './UploadedItemsList';
 export type { UploadedItemsListProps, UploadedItem } from './UploadedItemsList';
+export { FlashcardList } from './FlashcardList';
+export type { FlashcardListProps } from './FlashcardList';
