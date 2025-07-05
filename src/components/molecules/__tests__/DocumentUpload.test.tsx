@@ -48,6 +48,18 @@ describe('DocumentUpload', () => {
     it('should show loading state when uploading', () => {
       render(<DocumentUpload {...defaultProps} loading />);
 
+      expect(screen.getByRole('button')).toBeDisabled();
+      expect(screen.getByText('Choose Files')).toBeInTheDocument();
+    });
+
+    it('should show uploading state when upload status is uploading', () => {
+      render(
+        <DocumentUpload
+          {...defaultProps}
+          uploadStatus={{ status: 'uploading', message: 'Uploading files...' }}
+        />
+      );
+
       expect(screen.getByText('Uploading...')).toBeInTheDocument();
       expect(screen.getByRole('button')).toBeDisabled();
     });

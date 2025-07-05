@@ -1,11 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Card, FlashCardComponent, DocumentUpload } from '@/components';
-import { createFlashCard } from '@/types';
+import {
+  Button,
+  Card,
+  FlashCardComponent,
+  DocumentUpload,
+  UploadedItemsList,
+} from '@/components';
+import { createFlashCard, createContent, ContentType } from '@/types';
+import { StorageService } from '@/services';
 
 export default function Home() {
   const [showDemo, setShowDemo] = useState(false);
+  const [refreshList, setRefreshList] = useState(0);
+  const storageService = new StorageService();
 
   const demoCard = createFlashCard({
     question: 'What is the SM-2 spaced repetition algorithm?',
@@ -14,14 +23,62 @@ export default function Home() {
     tags: ['spaced-repetition', 'learning', 'memory'],
   });
 
-  const handleFileSelect = (files: File[]) => {
+  const handleFileSelect = async (files: File[]) => {
     console.log('Selected files:', files);
-    // TODO: Process uploaded files
+
+    // Process each file and create content records
+    for (const file of files) {
+      try {
+        const content = createContent({
+          title: file.name,
+          type: getContentType(file.name),
+          filePath: file.name, // In a real app, this would be a proper file path
+          youtubeUrl: null,
+          metadata: {
+            originalName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            lastModified: new Date(file.lastModified),
+          },
+          tags: ['uploaded', 'document'],
+        });
+
+        await storageService.saveContent(content);
+        console.log('Saved content:', content);
+      } catch (error) {
+        console.error('Error saving content:', error);
+        throw error;
+      }
+    }
+
+    // Trigger refresh of the uploaded items list
+    setRefreshList(prev => prev + 1);
   };
 
   const handleUploadError = (error: string) => {
     console.error('Upload error:', error);
-    // TODO: Show error message to user
+  };
+
+  const handleUploadComplete = (files: File[]) => {
+    console.log(
+      'Upload completed for files:',
+      files.map(f => f.name)
+    );
+    // Trigger refresh of the uploaded items list
+    setRefreshList(prev => prev + 1);
+  };
+
+  const getContentType = (filename: string): ContentType => {
+    const extension = filename.toLowerCase().split('.').pop();
+    switch (extension) {
+      case 'pdf':
+      case 'doc':
+      case 'docx':
+      case 'txt':
+        return ContentType.DOCUMENT;
+      default:
+        return ContentType.DOCUMENT;
+    }
   };
 
   return (
@@ -122,8 +179,17 @@ export default function Home() {
           <DocumentUpload
             onFileSelect={handleFileSelect}
             onError={handleUploadError}
+            onUploadComplete={handleUploadComplete}
           />
         </Card>
+
+        {/* Uploaded Items List */}
+        <div className="mt-8">
+          <UploadedItemsList
+            key={refreshList}
+            onRefresh={() => setRefreshList(prev => prev + 1)}
+          />
+        </div>
 
         {/* Footer */}
         <div className="text-center mt-12 text-gray-500">
