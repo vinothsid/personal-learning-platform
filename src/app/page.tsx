@@ -9,12 +9,19 @@ import {
   UploadedItemsList,
 } from '@/components';
 import { createFlashCard, createContent, ContentType } from '@/types';
-import { StorageService } from '@/services';
+import {
+  StorageService,
+  FileProcessingService,
+  FlashcardGenerationService,
+} from '@/services';
 
 export default function Home() {
   const [showDemo, setShowDemo] = useState(false);
   const [refreshList, setRefreshList] = useState(0);
+  const [processingStatus, setProcessingStatus] = useState<string>('');
   const storageService = new StorageService();
+  const fileProcessingService = new FileProcessingService();
+  const flashcardGenerationService = new FlashcardGenerationService();
 
   const demoCard = createFlashCard({
     question: 'What is the SM-2 spaced repetition algorithm?',
@@ -25,10 +32,14 @@ export default function Home() {
 
   const handleFileSelect = async (files: File[]) => {
     console.log('Selected files:', files);
+    setProcessingStatus('Processing files...');
 
-    // Process each file and create content records
-    for (const file of files) {
-      try {
+    try {
+      // Process each file and create content records with flashcard generation
+      for (const file of files) {
+        setProcessingStatus(`Processing ${file.name}...`);
+
+        // Create content record first
         const content = createContent({
           title: file.name,
           type: getContentType(file.name),
@@ -44,15 +55,123 @@ export default function Home() {
         });
 
         await storageService.saveContent(content);
-        console.log('Saved content:', content);
-      } catch (error) {
-        console.error('Error saving content:', error);
-        throw error;
-      }
-    }
 
-    // Trigger refresh of the uploaded items list
-    setRefreshList(prev => prev + 1);
+        // Process file to extract text (only for supported types)
+        if (fileProcessingService.isFileTypeSupported(file)) {
+          setProcessingStatus(`Extracting text from ${file.name}...`);
+
+          const processingResult =
+            await fileProcessingService.processFile(file);
+
+          if (processingResult.success && processingResult.extractedText) {
+            setProcessingStatus(`Generating flashcards from ${file.name}...`);
+
+            // Generate flashcards from extracted text
+            const generationResult =
+              await flashcardGenerationService.generateFlashcards(
+                processingResult.extractedText,
+                {
+                  maxCards: 10,
+                  customTags: [
+                    file.name.replace(/\.[^/.]+$/, ''),
+                    'auto-generated',
+                  ],
+                }
+              );
+
+            if (
+              generationResult.success &&
+              generationResult.flashcards.length > 0
+            ) {
+              // Save generated flashcards and link them to content
+              const flashcardIds: string[] = [];
+
+              for (const flashcard of generationResult.flashcards) {
+                // Link flashcard to source content
+                flashcard.contentSourceId = content.id;
+                await storageService.saveFlashCard(flashcard);
+                flashcardIds.push(flashcard.id);
+              }
+
+              // Update content with associated flashcard IDs
+              const updatedContent = {
+                ...content,
+                associatedCardIds: flashcardIds,
+                metadata: {
+                  ...content.metadata,
+                  generatedCardsCount: flashcardIds.length,
+                  textExtracted: true,
+                  ...processingResult.metadata,
+                },
+              };
+
+              await storageService.saveContent(updatedContent);
+
+              console.log(
+                `Generated ${flashcardIds.length} flashcards from ${file.name}`
+              );
+            } else {
+              console.warn(
+                `Could not generate flashcards from ${file.name}:`,
+                generationResult.error
+              );
+
+              // Update content to indicate processing attempted but failed
+              const updatedContent = {
+                ...content,
+                metadata: {
+                  ...content.metadata,
+                  textExtracted: true,
+                  generatedCardsCount: 0,
+                  processingError: generationResult.error,
+                },
+              };
+
+              await storageService.saveContent(updatedContent);
+            }
+          } else {
+            console.warn(
+              `Could not extract text from ${file.name}:`,
+              processingResult.error
+            );
+
+            // Update content to indicate text extraction failed
+            const updatedContent = {
+              ...content,
+              metadata: {
+                ...content.metadata,
+                textExtracted: false,
+                processingError: processingResult.error,
+              },
+            };
+
+            await storageService.saveContent(updatedContent);
+          }
+        } else {
+          console.log(`File type not supported for processing: ${file.name}`);
+
+          // Update content to indicate file type not supported
+          const updatedContent = {
+            ...content,
+            metadata: {
+              ...content.metadata,
+              textExtracted: false,
+              processingError: 'File type not supported for text extraction',
+            },
+          };
+
+          await storageService.saveContent(updatedContent);
+        }
+      }
+
+      setProcessingStatus('');
+      // Trigger refresh of the uploaded items list
+      setRefreshList(prev => prev + 1);
+    } catch (error) {
+      console.error('Error processing files:', error);
+      setProcessingStatus('');
+      throw error;
+    }
   };
 
   const handleUploadError = (error: string) => {
@@ -180,7 +299,29 @@ export default function Home() {
             onFileSelect={handleFileSelect}
             onError={handleUploadError}
             onUploadComplete={handleUploadComplete}
+            uploadStatus={
+              processingStatus
+                ? { status: 'uploading', message: processingStatus }
+                : { status: 'idle' }
+            }
           />
+
+          {processingStatus && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-center">
+                <div className="text-2xl mr-3">⚙️</div>
+                <div>
+                  <h4 className="font-medium text-blue-900">
+                    Processing Files
+                  </h4>
+                  <p className="text-blue-700 text-sm">{processingStatus}</p>
+                  <p className="text-blue-600 text-xs mt-1">
+                    Extracting text and generating flashcards automatically...
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Uploaded Items List */}
