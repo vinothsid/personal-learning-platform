@@ -111,16 +111,19 @@ describe('FileProcessingService', () => {
       expect(result.error).toContain('Error reading file');
     });
 
-    it('should handle PDF files with appropriate error message', async () => {
+    it('should handle PDF files with placeholder text extraction', async () => {
       const file = new File(['content'], 'test.pdf', {
         type: 'application/pdf',
       });
       const result = await service.processFile(file);
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain(
-        'PDF text extraction requires additional libraries'
+      expect(result.success).toBe(true);
+      expect(result.extractedText).toContain('PDF Document: test');
+      expect(result.extractedText).toContain(
+        'placeholder for PDF text extraction'
       );
+      expect(result.metadata).toBeDefined();
+      expect(result.metadata?.wordCount).toBeGreaterThan(0);
     });
 
     it('should handle DOC files with appropriate error message', async () => {

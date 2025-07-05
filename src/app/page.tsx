@@ -7,6 +7,7 @@ import {
   FlashCardComponent,
   DocumentUpload,
   UploadedItemsList,
+  FlashcardList,
 } from '@/components';
 import { createFlashCard, createContent, ContentType } from '@/types';
 import {
@@ -19,6 +20,8 @@ export default function Home() {
   const [showDemo, setShowDemo] = useState(false);
   const [refreshList, setRefreshList] = useState(0);
   const [processingStatus, setProcessingStatus] = useState<string>('');
+  const [showFlashcards, setShowFlashcards] = useState(false);
+  const [flashcardRefresh, setFlashcardRefresh] = useState(0);
   const storageService = new StorageService();
   const fileProcessingService = new FileProcessingService();
   const flashcardGenerationService = new FlashcardGenerationService();
@@ -165,8 +168,9 @@ export default function Home() {
       }
 
       setProcessingStatus('');
-      // Trigger refresh of the uploaded items list
+      // Trigger refresh of the uploaded items list and flashcards
       setRefreshList(prev => prev + 1);
+      setFlashcardRefresh(prev => prev + 1);
     } catch (error) {
       console.error('Error processing files:', error);
       setProcessingStatus('');
@@ -220,6 +224,13 @@ export default function Home() {
               onClick={() => setShowDemo(!showDemo)}
             >
               {showDemo ? 'Hide Demo' : 'Try Demo'}
+            </Button>
+            <Button
+              variant="secondary"
+              size="large"
+              onClick={() => setShowFlashcards(!showFlashcards)}
+            >
+              {showFlashcards ? 'Hide Flashcards' : 'View Flashcards'}
             </Button>
             <Button variant="ghost" size="large">
               View Documentation
@@ -331,6 +342,19 @@ export default function Home() {
             onRefresh={() => setRefreshList(prev => prev + 1)}
           />
         </div>
+
+        {/* Flashcards Section */}
+        {showFlashcards && (
+          <div className="mt-8">
+            <FlashcardList
+              key={flashcardRefresh}
+              maxCards={50}
+              onCardRated={(cardId, quality) =>
+                console.log('Card rated:', cardId, 'Quality:', quality)
+              }
+            />
+          </div>
+        )}
 
         {/* Footer */}
         <div className="text-center mt-12 text-gray-500">
